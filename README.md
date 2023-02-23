@@ -1,5 +1,5 @@
 # Reliable BitTorrent Validation
-This is the validation component for the Reliable BitTorrent group project (UBC CPSC 416 2022W2).
+This is the validation component for the Reliable BitTorrent group project (UBC CPSC 416 2022W2). The Reliable BitTorrent repository can be found [here](https://github.com/kaiyyang/cpsc416_GroupProject_ReliableBT).
 
 ## Prerequisite
 1.
@@ -12,7 +12,7 @@ This is the validation component for the Reliable BitTorrent group project (UBC 
     ```
 
 3.
-    This repository should be cloned as a silbing to the [ReliableBT repository](https://github.com/kaiyyang/cpsc416_GroupProject_ReliableBT) in your local file system, like the following:
+    This repository should be cloned as a silbing to the ReliableBT repository in your local file system, like the following:
     ```
     parent_directory
     ├- cpsc416_GroupProject_ReliableBT
@@ -25,13 +25,13 @@ This is the validation component for the Reliable BitTorrent group project (UBC 
     ```
 
 4.
-    Please make sure both this repository and the [ReliableBT repository](https://github.com/kaiyyang/cpsc416_GroupProject_ReliableBT) are up-to-date - you can fetch from upstream if necessary.
+    Please make sure both this repository and the ReliableBT repository are up-to-date - you can fetch from upstream if necessary.
 
 ## Setup Validation
 To confirm your setup is ready, below are the steps to run a simple test to verify the connection between the 2 repositories:
 
 1.
-    In the root of your [ReliableBT repository](https://github.com/kaiyyang/cpsc416_GroupProject_ReliableBT), switch to the `validation-setup` branch (that simply adds a dummy function):
+    In the root of your ReliableBT repository, switch to the `validation-setup` branch (that simply adds a dummy function):
     ```
     git checkout validation-setup
     ```
@@ -43,8 +43,8 @@ To confirm your setup is ready, below are the steps to run a simple test to veri
     ```
     The test should pass with "Setup Successfully" logged. You can modify the dummy function in `setup.go` and fail the test to verify the consistency further.
 3.
-    In the root of your [ReliableBT repository](https://github.com/kaiyyang/cpsc416_GroupProject_ReliableBT), switch back to master:
+    In the root of your ReliableBT repository, switch back to master:
     ```
     git checkout master
     ```
-And your setup should be good to go: any import reference to `github.com/anacrolix/torrent` in this repository should be pointing to the local clone of your [ReliableBT repository](https://github.com/kaiyyang/cpsc416_GroupProject_ReliableBT).
+And your setup should be good to go: any import reference to `github.com/anacrolix/torrent` in this repository should be pointing to the local clone of your ReliableBT repository.

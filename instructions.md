@@ -6,7 +6,7 @@ Below are temporary instructions to get the trackers working. A lot of things re
 2.
     Make sure you don't have any process occupying port 1337 (I have not yet figured out how to customize trakx ports properly, so this is a temporary solution) by running:
     ```sh
-    isof -i:1337
+    lsof -i:1337
     ```
     If nothing gets printed, port 1337 is available. Otherwise, you need to kill the process on this port (the pid information will be available from this command, then just `sudo kill` it).
 3.

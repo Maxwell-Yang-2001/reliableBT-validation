@@ -2,7 +2,7 @@
 Below are temporary instructions to get the trackers working. A lot of things require refining, however it is the first priority to make sure everyone at least has the setup ready.
 
 1.
-    Please clone the tracker repo as siblings to this repo and the core repo: https://github.com/crimist/trakx.
+    Please clone the tracker repo as a sibling to this repo and the client repo: [reliableBT-tracker](https://github.com/Maxwell-Yang-2001/reliableBT-tracker).
 2.
     Make sure you don't have any process occupying port 1337 (I have not yet figured out how to customize trakx ports properly, so this is a temporary solution) by running:
     ```sh

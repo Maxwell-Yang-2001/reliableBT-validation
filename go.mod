@@ -4,7 +4,10 @@ go 1.20
 
 replace github.com/anacrolix/torrent => ../cpsc416_GroupProject_ReliableBT
 
-require github.com/anacrolix/torrent v1.47.1-0.20221102120345-c63f7e1bd720
+require (
+	github.com/anacrolix/torrent v1.47.1-0.20221102120345-c63f7e1bd720
+	github.com/stretchr/testify v1.8.1
+)
 
 require (
 	crawshaw.io/sqlite v0.3.3-0.20220618202545-d1964889ea3c // indirect
@@ -60,6 +63,7 @@ require (
 	github.com/pion/udp v0.1.4 // indirect
 	github.com/pion/webrtc/v3 v3.1.42 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rs/dnscache v0.0.0-20211102005908-e0241e321417 // indirect
 	github.com/tidwall/btree v1.6.0 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
@@ -71,4 +75,5 @@ require (
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -1,0 +1,7 @@
+# Ignore temporary files generated during testing (but not test files)
+tests/leecher/*
+tests/seeder/*
+!tests/seeder/hello.txt
+!tests/seeder/C#.pdf
+
+.DS_Store

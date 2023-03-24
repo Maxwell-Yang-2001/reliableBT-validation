@@ -11,7 +11,7 @@ import (
 )
 
 // Create a magnet link for an existing file, and add it to the seeder client, then return the magnet link.
-func makeMagnet(t *testing.T, seeder *rbt.Client, dir, name string, trackers [][]string) string {
+func MakeMagnet(t *testing.T, seeder *rbt.Client, dir, name string, trackers [][]string) string {
 	mi := metainfo.MetaInfo{AnnounceList: trackers}
 	mi.SetDefaults()
 	info := metainfo.Info{PieceLength: 256 * 1024}
@@ -55,7 +55,7 @@ func TestSeederLeecher(t *testing.T) {
 	defer seeder.Close()
 
 	// Create a magnet link and add it to the seeder (note that there is no tracker info in the magnet)
-	magnetLink := makeMagnet(t, seeder, seederConfig.DataDir, "hello.txt", [][]string{})
+	magnetLink := MakeMagnet(t, seeder, seederConfig.DataDir, "hello.txt", [][]string{})
 
 	// Create a leecher
 	leecher, _ := rbt.NewClient(leecherConfig())
@@ -79,7 +79,7 @@ func TestSeederLeecherTracker(t *testing.T) {
 	defer seeder.Close()
 
 	// Create a magnet link and add it to the seeder (tracker on localhost is attached in the magnet)
-	magnetLink := makeMagnet(t, seeder, seederConfig.DataDir, "C#.pdf", [][]string{{"http://127.0.0.1:1337/announce"}})
+	magnetLink := MakeMagnet(t, seeder, seederConfig.DataDir, "C#.pdf", [][]string{{"http://127.0.0.1:1337/announce"}})
 
 	// Create a leecher
 	leecher, _ := rbt.NewClient(leecherConfig())

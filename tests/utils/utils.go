@@ -30,11 +30,11 @@ func VerifyFileContent(t *testing.T, refPath string, checkPaths []string) {
 
 	for {
 		refBuf := make([]byte, bufSize)
-		_, err := refFile.Read(refBuf)
+		refBytesRead, err := io.ReadFull(refFile, refBuf)
 
 		endOfFile := false
 
-		// Only acceptable if reaching EOF
+		// Error acceptable only if reaching EOF
 		if err != nil {
 			if err != io.EOF {
 				t.FailNow()
@@ -44,14 +44,14 @@ func VerifyFileContent(t *testing.T, refPath string, checkPaths []string) {
 
 		checkBuf := make([]byte, bufSize)
 		for _, checkFile := range checkFiles {
-			_, err := checkFile.Read(checkBuf)
+			checkBytesRead, err := io.ReadFull(checkFile, checkBuf)
 
-			// Only acceptable if reaching EOF when reference also does so
+			// Error acceptable only if reaching EOF when reference also does so
 			if err != nil && (err != io.EOF || !endOfFile) {
 				t.FailNow()
 			}
 
-			if !bytes.Equal(refBuf, checkBuf) {
+			if refBytesRead != checkBytesRead || !bytes.Equal(refBuf, checkBuf) {
 				t.FailNow()
 			}
 		}

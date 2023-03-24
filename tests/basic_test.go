@@ -2,6 +2,7 @@ package tests
 
 import (
 	"path/filepath"
+	"rbtValidation/tests/utils"
 	"testing"
 
 	rbt "github.com/anacrolix/torrent"
@@ -69,6 +70,9 @@ func TestSeederLeecher(t *testing.T) {
 	// Wait until transfer is complete
 	leecher_torrent.DownloadAll()
 	leecher.WaitAll()
+
+	// Verify file content equality
+	utils.VerifyFileContent(t, "seeder/hello.txt", []string{"leecher/hello.txt"})
 }
 
 // Test whether a seeder can transfer file to a leecher successfully by tracker letting them discover each other.
@@ -92,4 +96,7 @@ func TestSeederLeecherTracker(t *testing.T) {
 	// Wait until transfer is complete
 	leecher_torrent.DownloadAll()
 	leecher.WaitAll()
+
+	// Verify file content equality
+	utils.VerifyFileContent(t, "seeder/C#.pdf", []string{"leecher/C#.pdf"})
 }

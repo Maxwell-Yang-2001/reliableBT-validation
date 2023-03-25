@@ -1,6 +1,5 @@
 # Ignore temporary files generated during testing (including generated test files)
 tests/leecher/*
 tests/seeder/*
-resources
 
 .DS_Store

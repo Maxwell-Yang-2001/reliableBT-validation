@@ -12,7 +12,7 @@ This is the validation component for the Reliable BitTorrent group project (UBC 
     ```
 
 3.
-    Please make sure you have at least 65GB of free space on your device, as some tests involve transfer of large files.
+    Please make sure you have at least 50GB of free space on your device, as some tests involve transfer of large files.
 
 4.
     This repository should be cloned as a sibling to the client and tracker repository in your local file system, like the following:
@@ -31,7 +31,7 @@ To setup, simply run the test file `./tests/setup_test.go`:
 go test test/setup_test.go -v
 ```
 
-It runs some tests to check your local repositories have been set up correctly, as well as generating randomized test files of various sizes under `./resources` (you should see `test_1kb.txt`, `test_1mb.txt`, `test_1gb.txt`, `test_10gb.txt` and `test_20gb_txt` inside this directory).
+It runs some tests to check your local repositories have been set up correctly according to the prerequisites above.
 
 ## FAQ
 

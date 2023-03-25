@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"os"
 	"rbtValidation/utils"
 	"testing"
 
@@ -35,25 +36,28 @@ func TestSeederLeecher(t *testing.T) {
 	seederConfig := SeederConfig()
 	seeder, _ := rbt.NewClient(seederConfig)
 	defer seeder.Close()
+	defer os.RemoveAll(seederConfig.DataDir)
 
-	// Create a magnet link and add it to the seeder (note that there is no tracker info in the magnet)
-	magnetLink := utils.MakeMagnet(t, seeder, utils.TestFile1kb, [][]string{})
+	// Create the test file, a magnet link to it and add to the seeder (note that there is no tracker info in the magnet)
+	magnetLink := utils.CreateFileAndMagnet(t, seeder, seederConfig.DataDir, utils.TestFileName, 1e3, [][]string{})
 
 	// Create a leecher
-	leecher, _ := rbt.NewClient(LeecherConfig())
+	leecherConfig := LeecherConfig()
+	leecher, _ := rbt.NewClient(leecherConfig)
 	defer leecher.Close()
+	defer os.RemoveAll(leecherConfig.DataDir)
 
 	// Also attach the magnet link to the leecher (and directly given the seeder as peer)
-	leecher_torrent, _ := leecher.AddMagnet(magnetLink)
-	leecher_torrent.AddClientPeer(seeder)
-	<-leecher_torrent.GotInfo()
+	leecherTorrent, _ := leecher.AddMagnet(magnetLink)
+	leecherTorrent.AddClientPeer(seeder)
+	<-leecherTorrent.GotInfo()
 
 	// Wait until transfer is complete
-	leecher_torrent.DownloadAll()
+	leecherTorrent.DownloadAll()
 	leecher.WaitAll()
 
 	// Verify file content equality
-	utils.VerifyFileContent(t, utils.TestFile1kb, []string{"leecher/test_1kb.txt"})
+	utils.VerifyFileContent(t, utils.TestFileName, seederConfig.DataDir, []string{leecherConfig.DataDir})
 }
 
 // Test whether a seeder can transfer file to a leecher successfully by tracker letting them discover each other.
@@ -62,22 +66,25 @@ func TestSeederLeecherTracker(t *testing.T) {
 	seederConfig := SeederConfig()
 	seeder, _ := rbt.NewClient(seederConfig)
 	defer seeder.Close()
+	defer os.RemoveAll(seederConfig.DataDir)
 
-	// Create a magnet link and add it to the seeder (tracker on localhost is attached in the magnet)
-	magnetLink := utils.MakeMagnet(t, seeder, utils.TestFile1mb, [][]string{{"http://127.0.0.1:1337/announce"}})
+	// Create a test file, a magnet link and add it to the seeder (tracker on localhost is attached in the magnet)
+	magnetLink := utils.CreateFileAndMagnet(t, seeder, seederConfig.DataDir, utils.TestFileName, 1e6, [][]string{{utils.TestTrackerAnnounceUrl}})
 
 	// Create a leecher
-	leecher, _ := rbt.NewClient(LeecherConfig())
+	leecherConfig := LeecherConfig()
+	leecher, _ := rbt.NewClient(leecherConfig)
 	defer leecher.Close()
+	defer os.RemoveAll(leecherConfig.DataDir)
 
 	// Also attach the magnet link to the leecher
-	leecher_torrent, _ := leecher.AddMagnet(magnetLink)
-	<-leecher_torrent.GotInfo()
+	leecherTorrent, _ := leecher.AddMagnet(magnetLink)
+	<-leecherTorrent.GotInfo()
 
 	// Wait until transfer is complete
-	leecher_torrent.DownloadAll()
+	leecherTorrent.DownloadAll()
 	leecher.WaitAll()
 
 	// Verify file content equality
-	utils.VerifyFileContent(t, utils.TestFile1mb, []string{"leecher/test_1mb.txt"})
+	utils.VerifyFileContent(t, utils.TestFileName, seederConfig.DataDir, []string{leecherConfig.DataDir})
 }

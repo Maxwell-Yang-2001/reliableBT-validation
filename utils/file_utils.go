@@ -61,17 +61,17 @@ func CreateFile(t *testing.T, path string, size int64) (file *os.File) {
 
 // Check whether file at each path to be checked has the same content as that at the reference path,
 // Fails if any file IO fails or any file content mismatch is found.
-func VerifyFileContent(t *testing.T, refPath string, checkPaths []string) {
+func VerifyFileContent(t *testing.T, name string, refDir string, checkDirs []string) {
 	// Open the reference file and to-be-verified ones
-	refFile, err := os.Open(refPath)
+	refFile, err := os.Open(filepath.Join(refDir, name))
 	if err != nil {
 		t.FailNow()
 	}
 	defer refFile.Close()
 
-	checkFiles := make([]*os.File, len(checkPaths))
-	for i, path := range checkPaths {
-		checkFiles[i], err = os.Open(path)
+	checkFiles := make([]*os.File, len(checkDirs))
+	for i, checkDir := range checkDirs {
+		checkFiles[i], err = os.Open(filepath.Join(checkDir, name))
 		if err != nil {
 			t.FailNow()
 		}
@@ -86,7 +86,7 @@ func VerifyFileContent(t *testing.T, refPath string, checkPaths []string) {
 
 		// Error acceptable only if reaching EOF
 		if err != nil {
-			if err != io.EOF {
+			if err != io.ErrUnexpectedEOF {
 				t.FailNow()
 			}
 			endOfFile = true
@@ -97,7 +97,7 @@ func VerifyFileContent(t *testing.T, refPath string, checkPaths []string) {
 			checkBytesRead, err := io.ReadFull(checkFile, checkBuf)
 
 			// Error acceptable only if reaching EOF when reference also does so
-			if err != nil && (err != io.EOF || !endOfFile) {
+			if err != nil && (err != io.ErrUnexpectedEOF || !endOfFile) {
 				t.FailNow()
 			}
 

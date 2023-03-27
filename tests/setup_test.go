@@ -6,7 +6,8 @@ import (
 	rbt "github.com/anacrolix/torrent"
 )
 
-func TestSetup(t *testing.T) {
+// Verifies whether local copy of the reliableBT client repo is in use.
+func TestClientSetup(t *testing.T) {
 	ret := rbt.SetupCheck()
 	const exp = "Setup Successfully"
 	if ret == exp {

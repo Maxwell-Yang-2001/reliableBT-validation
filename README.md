@@ -1,5 +1,5 @@
 # Reliable BitTorrent Validation
-This is the validation component for the Reliable BitTorrent group project (UBC CPSC 416 2022W2). The client (peer) repository can be found [here](https://github.com/Maxwell-Yang-2001/reliableBT-tracker), and the tracker repository can be found [here](https://github.com/kaiyyang/cpsc416_GroupProject_ReliableBT).
+This is the validation component for the Reliable BitTorrent group project (UBC CPSC 416 2022W2). The client (peer) repository can be found [here](https://github.com/kaiyyang/cpsc416_GroupProject_ReliableBT), and the tracker repository can be found [here](https://github.com/Maxwell-Yang-2001/reliableBT-tracker).
 
 ## Prerequisite
 1.
@@ -12,39 +12,32 @@ This is the validation component for the Reliable BitTorrent group project (UBC 
     ```
 
 3.
-    This repository should be cloned as a silbing to the ReliableBT repository in your local file system, like the following:
+    Please make sure you have at least 50GB of free space on your device, as some tests involve transfer of large files.
+
+4.
+    This repository should be cloned as a sibling to the client and tracker repository in your local file system, like the following:
     ```
     parent_directory
     ├- cpsc416_GroupProject_ReliableBT
+    ├- reliableBT-tracker
     └- reliableBT-validation
-    ```
-    If for some reason this is not possible on your machine, run the followings in the root of this repository:
-    ```sh
-    go mod edit -replace github.com/anacrolix/torrent=<PATH TO THE RELIABLEBT REPOSITORY>
-    go mod tidy
-    ```
 
-4.
-    Please make sure both this repository and the ReliableBT repository are up-to-date - you can fetch from upstream if necessary.
+5.
+    Please make sure all repositories in the point above are up-to-date - you can fetch from upstream if necessary.
 
-## Setup Validation
-To confirm your setup is ready, below are the steps to run a simple test to verify the connection between the 2 repositories:
+## Setup
+To setup, simply run the test file `./tests/setup_test.go`:
+```
+go test test/setup_test.go -v
+```
+
+It runs some tests to check your local repositories have been set up correctly according to the prerequisites above.
+
+## FAQ
 
 1.
-    In the root of your ReliableBT repository, switch to the `validation-setup` branch (that simply adds a dummy function):
-    ```
-    git checkout validation-setup
-    ```
-2.
-    In the root of this current repository, run the setup tests (check whether the dummy function is callable):
-    ```
-    cd tests
-    go test -v
-    ```
-    The test should pass with "Setup Successfully" logged. You can modify the dummy function in `setup.go` and fail the test to verify the consistency further.
-3.
-    In the root of your ReliableBT repository, switch back to master:
-    ```
-    git checkout master
-    ```
-And your setup should be good to go: any import reference to `github.com/anacrolix/torrent` in this repository should be pointing to the local clone of your ReliableBT repository.
+    Q: I am using VSCode. I ran a test through the UI (instead of terminal) which indicated that the test timed out after 30 seconds. Is this expected?
+    
+    A: That is indeed expected! Some of our tests are expected to run for a long time, since performance is a criteria we want to measure. Running the test through the UI simply adds a flag to time out with the 30 seconds by default of the Go VSCode extension.
+    
+    To work around it, go to `settings.json` of your VSCode (you can use the command palette and search for "Preference: Open Settings (UI)"). Then simply find the setting corresponding to the test timeout (it has a setting ID of `go.testTimeout` which you can type in the search bar to filter) and adjust its value, which we recommend to be 300s.

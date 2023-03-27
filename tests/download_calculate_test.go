@@ -1,6 +1,8 @@
 package tests
 
 import (
+	"os"
+	"rbtValidation/utils"
 	"testing"
 
 	rbt "github.com/anacrolix/torrent"
@@ -8,30 +10,28 @@ import (
 
 func TestDownloadSpeed(t *testing.T) {
 	// Create a seeder
-	seederConfig := seederConfig()
+	seederConfig := SeederConfig()
 	seeder, _ := rbt.NewClient(seederConfig)
 	defer seeder.Close()
+	defer os.RemoveAll(seederConfig.DataDir)
 
-	// Create a magnet link and add it to the seeder (tracker on localhost is attached in the magnet)
-	magnetLink := MakeMagnet(t, seeder, seederConfig.DataDir, "ubuntu-14.04.2-desktop-amd64.iso", [][]string{{"http://127.0.0.1:1337/announce"}})
+	// Create a test file, a magnet link and add it to the seeder (tracker on localhost is attached in the magnet)
+	magnetLink := utils.CreateFileAndMagnet(t, seeder, seederConfig.DataDir, utils.TestFileName, 2e9, [][]string{{utils.TestTrackerAnnounceUrl}})
 
 	// Create a leecher
-	leecher, _ := rbt.NewClient(leecherConfig())
+	leecherConfig := LeecherConfig()
+	leecher, _ := rbt.NewClient(leecherConfig)
 	defer leecher.Close()
+	defer os.RemoveAll(leecherConfig.DataDir)
 
 	// Also attach the magnet link to the leecher
-	leecher_torrent, _ := leecher.AddMagnet(magnetLink)
-	<-leecher_torrent.GotInfo()
+	leecherTorrent, _ := leecher.AddMagnet(magnetLink)
+	<-leecherTorrent.GotInfo()
 
 	// Wait until transfer is complete
-	leecher_torrent.DownloadAll()
-    
-	// downloadSpeed := leecher_torrent.DoHttpSend(leecher_torrent.Stats().BytesReadData)
-
-	
-	// fmt.Println(downloadSpeed)
-	// time.Sleep(5 * time.Second)
-	// speed := leecher_torrent.DoHttpSend(leecher_torrent.Stats().BytesReadData)
-	// fmt.Println(speed)
+	leecherTorrent.DownloadAll()
 	leecher.WaitAll()
+
+	// Verify file content equality
+	utils.VerifyFileContent(t, utils.TestFileName, seederConfig.DataDir, []string{leecherConfig.DataDir})
 }

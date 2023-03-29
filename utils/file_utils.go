@@ -10,19 +10,25 @@ import (
 	"testing"
 )
 
-const bufSize = PieceLength * 80 // 10MB per chunk
+const bufSize = PieceLength * 80 // 10MB per
+
+// Create a directory at said location.
+// Fails if any file IO fails.
+func CreateDir(t *testing.T, path string) {
+	err := os.MkdirAll(path, 0700)
+	if err != nil {
+		t.FailNow()
+	}
+}
 
 // Create a file at said location with randomized content of specifed amount,
 // Returns the entire file without closing it.
 // Fails if any file IO fails (but not when the file already exists).
 func CreateFile(t *testing.T, path string, size int64) (file *os.File) {
 	// First ensure the directory is good
-	err := os.MkdirAll(filepath.Dir(path), 0700)
-	if err != nil {
-		t.FailNow()
-	}
+	CreateDir(t, filepath.Dir(path))
 
-	file, err = os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		t.FailNow()
 	}

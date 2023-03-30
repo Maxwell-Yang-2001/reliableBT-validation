@@ -90,7 +90,7 @@ Now with the addition of `baseline provider`, regular `peer` will get informatio
  - `peers`: this now only applies to regular `peer`s that are not the `baseline provider`s.
  - `baselineProvider`: this is an optional parameter, representing a `baseline provider` from its known set of them. Similar to `peers`, this includes its `peer_id`, `ip` and `port`.
 
-For which `baseline provider` is chosen to be promoted to a `peer` when multiple are known to the `tracker`, this will be described in the [tracker details](#tracker-details) section below.
+For which `baseline provider` is chosen to be promoted to a `peer` when multiple are known to the `tracker`, this will be described in the [baseline provider selection](#baseline-provider-selection) section below.
 
 For how a "bad actor" is identified and how to respond in this case, this will be described in the [bad actors](#bad-actors) section below.
 

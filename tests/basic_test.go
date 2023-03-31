@@ -34,21 +34,25 @@ func LeecherConfig() (config *rbt.ClientConfig) {
 func TestSeederLeecher(t *testing.T) {
 	// Create a seeder
 	seederConfig := SeederConfig()
+	utils.CreateDir(t, seederConfig.DataDir)
 	seeder, _ := rbt.NewClient(seederConfig)
 	defer seeder.Close()
 	defer os.RemoveAll(seederConfig.DataDir)
 
-	// Create the test file, a magnet link to it and add to the seeder (note that there is no tracker info in the magnet)
-	magnetLink := utils.CreateFileAndMagnet(t, seeder, seederConfig.DataDir, utils.TestFileName, 1e3, [][]string{})
+	// Create a test file within the seeder dir and add it to the seeder client
+	metaInfo := utils.CreateFileAndMetaInfo(t, []string{seederConfig.DataDir}, utils.TestFileName, 1e3, [][]string{})
+	seederTorrent, err := seeder.AddTorrent(&metaInfo)
+	utils.TestSeederInitial(t, *seederTorrent, err)
 
 	// Create a leecher
 	leecherConfig := LeecherConfig()
+	utils.CreateDir(t, leecherConfig.DataDir)
 	leecher, _ := rbt.NewClient(leecherConfig)
 	defer leecher.Close()
 	defer os.RemoveAll(leecherConfig.DataDir)
 
-	// Also attach the magnet link to the leecher (and directly given the seeder as peer)
-	leecherTorrent, _ := leecher.AddMagnet(magnetLink)
+	// Also attach the metaInfo to the leecher (and directly given the seeder as peer)
+	leecherTorrent, _ := leecher.AddTorrent(&metaInfo)
 	leecherTorrent.AddClientPeer(seeder)
 	<-leecherTorrent.GotInfo()
 
@@ -64,21 +68,25 @@ func TestSeederLeecher(t *testing.T) {
 func TestSeederLeecherTracker(t *testing.T) {
 	// Create a seeder
 	seederConfig := SeederConfig()
+	utils.CreateDir(t, seederConfig.DataDir)
 	seeder, _ := rbt.NewClient(seederConfig)
 	defer seeder.Close()
 	defer os.RemoveAll(seederConfig.DataDir)
 
-	// Create a test file, a magnet link and add it to the seeder (tracker on localhost is attached in the magnet)
-	magnetLink := utils.CreateFileAndMagnet(t, seeder, seederConfig.DataDir, utils.TestFileName, 1e6, [][]string{{utils.TestTrackerAnnounceUrl}})
+	// Create a test file within the seeder dir and add it to the seeder client
+	metaInfo := utils.CreateFileAndMetaInfo(t, []string{seederConfig.DataDir}, utils.TestFileName, 1e6, [][]string{{utils.TestTrackerAnnounceUrl}})
+	seederTorrent, err := seeder.AddTorrent(&metaInfo)
+	utils.TestSeederInitial(t, *seederTorrent, err)
 
 	// Create a leecher
 	leecherConfig := LeecherConfig()
+	utils.CreateDir(t, leecherConfig.DataDir)
 	leecher, _ := rbt.NewClient(leecherConfig)
 	defer leecher.Close()
 	defer os.RemoveAll(leecherConfig.DataDir)
 
-	// Also attach the magnet link to the leecher
-	leecherTorrent, _ := leecher.AddMagnet(magnetLink)
+	// Also attach the metaInfo to the leecher
+	leecherTorrent, _ := leecher.AddTorrent(&metaInfo)
 	<-leecherTorrent.GotInfo()
 
 	// Wait until transfer is complete

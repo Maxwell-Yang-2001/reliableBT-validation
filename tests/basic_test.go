@@ -42,7 +42,6 @@ func TestSeederLeecher(t *testing.T) {
 	// Create a test file within the seeder dir and add it to the seeder client
 	metaInfo := utils.CreateFileAndMetaInfo(t, []string{seederConfig.DataDir}, utils.TestFileName, 1e3, [][]string{})
 	seederTorrent, err := seeder.AddTorrent(&metaInfo)
-	seederTorrent.SmallIntervalAllowed = true
 	utils.TestSeederInitial(t, *seederTorrent, err)
 
 	// Create a leecher
@@ -77,7 +76,6 @@ func TestSeederLeecherTracker(t *testing.T) {
 	// Create a test file within the seeder dir and add it to the seeder client
 	metaInfo := utils.CreateFileAndMetaInfo(t, []string{seederConfig.DataDir}, utils.TestFileName, 1e6, [][]string{{utils.TestTrackerAnnounceUrl}})
 	seederTorrent, err := seeder.AddTorrent(&metaInfo)
-	seederTorrent.SmallIntervalAllowed = true
 	utils.TestSeederInitial(t, *seederTorrent, err)
 
 	// Create a leecher

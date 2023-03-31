@@ -90,32 +90,32 @@ func TestSeederLeecherTracker(t *testing.T) {
 }
 
 
-// func TestSimpleChunkAccessPattern(t *testing.T) {
-// 	// Create a seeder 1
-// 	seederConfig := SeederConfig(3000)
-// 	seeder1, _ := rbt.NewClient(seederConfig)
-// 	defer seeder1.Close()
-// 	defer os.RemoveAll(seederConfig.DataDir)
+func TestSimpleChunkAccessPattern(t *testing.T) {
+	// Create a seeder 1
+	seederConfig := SeederConfig(3000)
+	seeder1, _ := rbt.NewClient(seederConfig)
+	defer seeder1.Close()
+	defer os.RemoveAll(seederConfig.DataDir)
 
 	
-// 	// Create a test file, a magnet link and add it to the seeder (tracker on localhost is attached in the magnet)
-// 	magnetLink := utils.CreateFileAndMagnet(t, seeder1, seederConfig.DataDir, utils.TestFileName, 1e6, [][]string{{utils.TestTrackerAnnounceUrl}})
+	// Create a test file, a magnet link and add it to the seeder (tracker on localhost is attached in the magnet)
+	magnetLink := utils.CreateFileAndMagnet(t, seeder1, seederConfig.DataDir, utils.TestFileName, 1e3, [][]string{{utils.TestTrackerAnnounceUrl}})
 
-// 	// Create a leecher
-// 	leecherConfig := LeecherConfig(3001)
-// 	leecher, _ := rbt.NewClient(leecherConfig)
-// 	defer leecher.Close()
-// 	defer os.RemoveAll(leecherConfig.DataDir)
+	// Create a leecher
+	leecherConfig := LeecherConfig(3001)
+	leecher, _ := rbt.NewClient(leecherConfig)
+	defer leecher.Close()
+	defer os.RemoveAll(leecherConfig.DataDir)
 
-// 	// Also attach the magnet link to the leecher
-// 	leecherTorrent, _ := leecher.AddMagnet(magnetLink)
-// 	<-leecherTorrent.GotInfo()
+	// Also attach the magnet link to the leecher
+	leecherTorrent, _ := leecher.AddMagnet(magnetLink)
+	<-leecherTorrent.GotInfo()
 
-// 	// Wait until transfer is complete
-// 	leecherTorrent.DownloadAll()
-// 	leecher.WaitAll()
+	// Wait until transfer is complete
+	leecherTorrent.DownloadAll()
+	leecher.WaitAll()
 
-// 	// Verify file content equality
-// 	utils.VerifyFileContent(t, utils.TestFileName, seederConfig.DataDir, []string{leecherConfig.DataDir})
+	// Verify file content equality
+	utils.VerifyFileContent(t, utils.TestFileName, seederConfig.DataDir, []string{leecherConfig.DataDir})
 
-// }
+}

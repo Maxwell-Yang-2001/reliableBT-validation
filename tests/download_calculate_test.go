@@ -10,7 +10,7 @@ import (
 
 func TestDownloadSpeed(t *testing.T) {
 	// Create a seeder
-	seederConfig := SeederConfig()
+	seederConfig := SeederConfig(3000)
 	seeder, _ := rbt.NewClient(seederConfig)
 	defer seeder.Close()
 	defer os.RemoveAll(seederConfig.DataDir)
@@ -19,7 +19,7 @@ func TestDownloadSpeed(t *testing.T) {
 	magnetLink := utils.CreateFileAndMagnet(t, seeder, seederConfig.DataDir, utils.TestFileName, 2e9, [][]string{{utils.TestTrackerAnnounceUrl}})
 
 	// Create a leecher
-	leecherConfig := LeecherConfig()
+	leecherConfig := LeecherConfig(3001)
 	leecher, _ := rbt.NewClient(leecherConfig)
 	defer leecher.Close()
 	defer os.RemoveAll(leecherConfig.DataDir)

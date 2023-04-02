@@ -1,6 +1,8 @@
 package tests
 
 import (
+	"fmt"
+	"io"
 	"os"
 	"rbtValidation/utils"
 	"testing"
@@ -17,6 +19,8 @@ func SeederConfig() (config *rbt.ClientConfig) {
 	config.NoDHT = true
 	config.DisableTCP = false
 	config.ListenPort = 0
+	config.IsFTP = false
+	config.DefaultFTPport = 2121
 	return
 }
 
@@ -62,6 +66,70 @@ func TestSeederLeecher(t *testing.T) {
 
 	// Verify file content equality
 	utils.VerifyFileContent(t, utils.TestFileName, seederConfig.DataDir, []string{leecherConfig.DataDir})
+}
+
+// Test the row connection:
+// FTP server can transfer file to the leecher successfully by directly build up a client-server connection.
+// Note: To run this test make sure your reliableBT-FTP server is running on port 2121.
+func TestSeederLeecherFTP(t *testing.T) {
+	// Create a seeder
+	seederConfig := SeederConfig()
+	seederConfig.IsFTP = true
+
+	seeder, _ := rbt.NewClient(seederConfig)
+	defer seeder.Close()
+
+	// Create a leecher
+	leecher, _ := rbt.NewClient(LeecherConfig())
+	defer leecher.Close()
+
+	c, err := leecher.DialFTP()
+	if err != nil {
+		t.Log("Dial to FTP failed")
+	}
+
+	fileName := "/kitty.jpg"
+	// read the hello.txt from
+	ftpResp, err := c.Retr(fileName)
+	if err != nil {
+		t.Log("File not Found")
+	}
+
+	defer ftpResp.Close()
+
+	newFile, err := os.OpenFile(LeecherConfig().DataDir+fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		t.Log(err)
+	}
+
+	defer newFile.Close()
+
+	// Read from remote file in chunks of 1024 bytes and write to leetcher local db
+	buffer := make([]byte, 1024)
+	for {
+		n, err := ftpResp.Read(buffer)
+		if err != nil && err != io.EOF {
+			panic(err)
+		}
+
+		if n == 0 {
+			break
+		}
+
+		_, err = newFile.Write(buffer[:n])
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("Wrote %d bytes to file\n", n)
+	}
+
+	// check if the file actually exists
+	_, err = os.Stat(LeecherConfig().DataDir + fileName)
+	if err != nil {
+		t.Log("File doesn't exist in the Leecher data dir")
+		t.FailNow()
+	}
 }
 
 // Test whether a seeder can transfer file to a leecher successfully by tracker letting them discover each other.

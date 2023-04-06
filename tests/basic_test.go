@@ -45,7 +45,7 @@ func TestSeederLeecher(t *testing.T) {
 	utils.TestSeederInitial(t, *seederTorrent, err)
 
 	// Create a leecher
-	leecherConfig := LeecherConfig(3001)
+	leecherConfig := LeecherConfig(3003)
 	utils.CreateDir(t, leecherConfig.DataDir)
 	leecher, _ := rbt.NewClient(leecherConfig)
 	defer leecher.Close()
@@ -97,8 +97,45 @@ func TestSeederLeecherTracker(t *testing.T) {
 	utils.VerifyFileContent(t, utils.TestFileName, seederConfig.DataDir, []string{leecherConfig.DataDir})
 }
 
+func TestMultipleSeedersOneLeecher(t *testing.T) {
+	seederConfig1 := SeederConfig(3000)
+	utils.CreateDir(t, seederConfig1.DataDir)
+	seeder1, _ := rbt.NewClient(seederConfig1)
+	defer seeder1.Close()
+	defer os.RemoveAll(seederConfig1.DataDir)
 
-func TestSimpleChunkAccessPattern(t *testing.T) {
+	seederConfig2 := SeederConfig(3001)
+	utils.CreateDir(t, seederConfig2.DataDir)
+	seeder2, _ := rbt.NewClient(seederConfig2)
+	defer seeder2.Close()
+	defer os.RemoveAll(seederConfig2.DataDir)
+
+	// Create a test file within the seeder dir and add it to the seeder client
+	metaInfo := utils.CreateFileAndMetaInfo(t, []string{seederConfig1.DataDir, seederConfig2.DataDir}, utils.TestFileName, 1e6, [][]string{{utils.TestTrackerAnnounceUrl}})
+	seederTorrent1, err := seeder1.AddTorrent(&metaInfo)
+	utils.TestSeederInitial(t, *seederTorrent1, err)
+
+	seederTorrent2, err := seeder2.AddTorrent(&metaInfo)
+	utils.TestSeederInitial(t, *seederTorrent2, err)
+
+	leecherConfig1 := LeecherConfig(3002)
+	utils.CreateDir(t, leecherConfig1.DataDir)
+	leecher, _ := rbt.NewClient(leecherConfig1)
+	defer leecher.Close()
+	defer os.RemoveAll(leecherConfig1.DataDir)
+
+	leecherTorrent1, _ := leecher.AddTorrent(&metaInfo)
+	<-leecherTorrent1.GotInfo()
+
+	leecherTorrent1.DownloadAll()
+	leecher.WaitAll()
+
+	utils.VerifyFileContent(t, utils.TestFileName, seederConfig1.DataDir, []string{leecherConfig1.DataDir})
+	utils.VerifyFileContent(t, utils.TestFileName, seederConfig2.DataDir, []string{leecherConfig1.DataDir})
+}
+
+
+func TestOneSeederMultipleLeechers(t *testing.T) {
 	// Create a seeder 1
 	seederConfig := SeederConfig(3000)
 	utils.CreateDir(t, seederConfig.DataDir)
@@ -106,26 +143,62 @@ func TestSimpleChunkAccessPattern(t *testing.T) {
 	defer seeder.Close()
 	defer os.RemoveAll(seederConfig.DataDir)
 
+
 	// Create a test file within the seeder dir and add it to the seeder client
 	metaInfo := utils.CreateFileAndMetaInfo(t, []string{seederConfig.DataDir}, utils.TestFileName, 1e6, [][]string{{utils.TestTrackerAnnounceUrl}})
 	seederTorrent, err := seeder.AddTorrent(&metaInfo)
 	utils.TestSeederInitial(t, *seederTorrent, err)
 
 	// Create a leecher
-	leecherConfig := LeecherConfig(3001)
-	utils.CreateDir(t, leecherConfig.DataDir)
-	leecher, _ := rbt.NewClient(leecherConfig)
+	leecherConfig1 := LeecherConfig(3001)
+	utils.CreateDir(t, leecherConfig1.DataDir)
+	leecher, _ := rbt.NewClient(leecherConfig1)
 	defer leecher.Close()
-	defer os.RemoveAll(leecherConfig.DataDir)
+	defer os.RemoveAll(leecherConfig1.DataDir)
+
+
+	leecherConfig2 := LeecherConfig(3002)
+	utils.CreateDir(t, leecherConfig2.DataDir)
+	leecher2, _ := rbt.NewClient(leecherConfig2)
+	defer leecher2.Close()
+	defer os.RemoveAll(leecherConfig2.DataDir)
+
+	leecherConfig3 := LeecherConfig(3003)
+	utils.CreateDir(t, leecherConfig3.DataDir)
+	leecher3, _ := rbt.NewClient(leecherConfig3)
+	defer leecher3.Close()
+	defer os.RemoveAll(leecherConfig3.DataDir)
 
 	// Also attach the metaInfo to the leecher
 	leecherTorrent, _ := leecher.AddTorrent(&metaInfo)
+	leecherTorrent2, _  := leecher2.AddTorrent(&metaInfo)
+	leecherTorrent3, _  := leecher3.AddTorrent(&metaInfo)
 	<-leecherTorrent.GotInfo()
+	<-leecherTorrent2.GotInfo()
+	<-leecherTorrent3.GotInfo()
+
+
 
 	// Wait until transfer is complete
-	leecherTorrent.DownloadAll()
+	go func() {
+		leecherTorrent.DownloadAll()
+		
+	}()
+	
+	go func() {
+		leecherTorrent2.DownloadAll()
+		
+	}()
+
+	go func() {
+		leecherTorrent3.DownloadAll()
+	}()
+	
+
 	leecher.WaitAll()
+	leecher2.WaitAll()
+	leecher3.WaitAll()
 
 	// Verify file content equality
-	utils.VerifyFileContent(t, utils.TestFileName, seederConfig.DataDir, []string{leecherConfig.DataDir})
+	utils.VerifyFileContent(t, utils.TestFileName, seederConfig.DataDir, []string{leecherConfig1.DataDir, leecherConfig2.DataDir, leecherConfig3.DataDir})
 }

@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const bufSize = PieceLength * 80 // 10MB per
@@ -21,29 +23,41 @@ func CreateDir(t *testing.T, path string) {
 	}
 }
 
-// Create a file at said location with randomized content of specifed amount,
-// Returns the entire file without closing it.
-// Fails if any file IO fails (but not when the file already exists).
-func CreateFile(t *testing.T, path string, size int64) (file *os.File) {
-	// First ensure the directory is good
-	CreateDir(t, filepath.Dir(path))
-
-	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		t.FailNow()
+// Create a file at specified location with randomized content of specifed amount,
+// And duplicated it among all spoecified locations,
+// Returns the first one of them.
+// Fails if any file IO fails (but not when the file already exists) or no path is given.
+func CreateFiles(t *testing.T, paths []string, size int64) (file *os.File) {
+	require.NotZero(t, len(paths))
+	// First ensure the directories are good
+	for _, path := range paths {
+		CreateDir(t, filepath.Dir(path))
 	}
-	defer file.Close()
+
+	files := make([]*os.File, len(paths))
+
+	for i, path := range paths {
+		fmt.Printf("Creating test file at path %s\n", path)
+		file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+		if err != nil {
+			t.FailNow()
+		}
+		defer file.Close()
+		files[i] = file
+	}
 
 	// Write chunks by chunks of randomized data
 	buf := make([]byte, bufSize)
 	for size >= bufSize {
-		_, err = rand.Read(buf)
+		_, err := rand.Read(buf)
 		if err != nil {
 			t.FailNow()
 		}
-		_, err = file.Write(buf)
-		if err != nil {
-			t.FailNow()
+		for _, file := range files {
+			_, err = file.Write(buf)
+			if err != nil {
+				t.FailNow()
+			}
 		}
 		size -= bufSize
 	}
@@ -51,23 +65,24 @@ func CreateFile(t *testing.T, path string, size int64) (file *os.File) {
 	// Write the remaining incomplete chunk
 	if size != 0 {
 		buf = make([]byte, size)
-		_, err = rand.Read(buf)
+		_, err := rand.Read(buf)
 		if err != nil {
-			fmt.Println("h5")
 			t.FailNow()
 		}
-		_, err = file.Write(buf)
-		if err != nil {
-			fmt.Println("h6")
-			t.FailNow()
+		for _, file := range files {
+			_, err = file.Write(buf)
+			if err != nil {
+				t.FailNow()
+			}
 		}
 	}
-	return
+	return files[0]
 }
 
 // Check whether file at each path to be checked has the same content as that at the reference path,
 // Fails if any file IO fails or any file content mismatch is found.
 func VerifyFileContent(t *testing.T, name string, refDir string, checkDirs []string) {
+	fmt.Println("Verifying file content equality")
 	// Open the reference file and to-be-verified ones
 	refFile, err := os.Open(filepath.Join(refDir, name))
 	if err != nil {
@@ -113,6 +128,7 @@ func VerifyFileContent(t *testing.T, name string, refDir string, checkDirs []str
 		}
 
 		if endOfFile {
+			fmt.Println("SUCCESS: File content equality holds")
 			return
 		}
 	}

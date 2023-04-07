@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"os"
 	"rbtValidation/utils"
 	"testing"
@@ -9,31 +10,44 @@ import (
 )
 
 // Create the configuration for a seeder.
-func SeederConfig() (config *rbt.ClientConfig) {
+func SeederConfig(id int, listenPort int) (config *rbt.ClientConfig) {
 	config = rbt.NewDefaultClientConfig()
 	config.Seed = true
-	config.DataDir = "./seeder"
+	config.DataDir = fmt.Sprintf("./seeder%d", id)
 	config.NoUpload = false
 	config.NoDHT = true
 	config.DisableTCP = false
-	config.ListenPort = 0
+	config.ListenPort = listenPort
+	return
+}
+
+// Create the configuration for a baseline provider.
+func BaselineProviderConfig(id int, listenPort int) (config *rbt.ClientConfig) {
+	config = rbt.NewDefaultClientConfig()
+	config.Seed = true
+	config.DataDir = fmt.Sprintf("./baselineProvider%d", id)
+	config.NoUpload = false
+	config.NoDHT = true
+	config.DisableTCP = false
+	config.ListenPort = listenPort
+	config.Reliable = true
 	return
 }
 
 // Create the configuration for a leecher
-func LeecherConfig() (config *rbt.ClientConfig) {
+func LeecherConfig(id int, listenPort int) (config *rbt.ClientConfig) {
 	config = rbt.NewDefaultClientConfig()
-	config.ListenPort = 0
-	config.DataDir = "./leecher"
+	config.DataDir = fmt.Sprintf("./leecher%d", id)
 	config.NoDHT = true
 	config.DisableTCP = false
+	config.ListenPort = listenPort
 	return
 }
 
 // Test whether a seeder can transfer file to a leecher successfully by directly feeding the seeder as a peer for the leecher.
 func TestSeederLeecher(t *testing.T) {
 	// Create a seeder
-	seederConfig := SeederConfig()
+	seederConfig := SeederConfig(0, 0)
 	utils.CreateDir(t, seederConfig.DataDir)
 	seeder, _ := rbt.NewClient(seederConfig)
 	defer seeder.Close()
@@ -42,10 +56,10 @@ func TestSeederLeecher(t *testing.T) {
 	// Create a test file within the seeder dir and add it to the seeder client
 	metaInfo := utils.CreateFileAndMetaInfo(t, []string{seederConfig.DataDir}, utils.TestFileName, 1e3, [][]string{})
 	seederTorrent, err := seeder.AddTorrent(&metaInfo)
-	utils.TestSeederInitial(t, *seederTorrent, err)
+	utils.TestSeederInitial(t, seederTorrent, err)
 
 	// Create a leecher
-	leecherConfig := LeecherConfig()
+	leecherConfig := LeecherConfig(0, 0)
 	utils.CreateDir(t, leecherConfig.DataDir)
 	leecher, _ := rbt.NewClient(leecherConfig)
 	defer leecher.Close()
@@ -60,6 +74,9 @@ func TestSeederLeecher(t *testing.T) {
 	leecherTorrent.DownloadAll()
 	leecher.WaitAll()
 
+	// Verify baseline provider
+	utils.VerifyBaselineProvider(t, []*rbt.Torrent{seederTorrent, leecherTorrent}, nil)
+
 	// Verify file content equality
 	utils.VerifyFileContent(t, utils.TestFileName, seederConfig.DataDir, []string{leecherConfig.DataDir})
 }
@@ -67,7 +84,7 @@ func TestSeederLeecher(t *testing.T) {
 // Test whether a seeder can transfer file to a leecher successfully by tracker letting them discover each other.
 func TestSeederLeecherTracker(t *testing.T) {
 	// Create a seeder
-	seederConfig := SeederConfig()
+	seederConfig := SeederConfig(0, 0)
 	utils.CreateDir(t, seederConfig.DataDir)
 	seeder, _ := rbt.NewClient(seederConfig)
 	defer seeder.Close()
@@ -76,10 +93,10 @@ func TestSeederLeecherTracker(t *testing.T) {
 	// Create a test file within the seeder dir and add it to the seeder client
 	metaInfo := utils.CreateFileAndMetaInfo(t, []string{seederConfig.DataDir}, utils.TestFileName, 1e6, [][]string{{utils.TestTrackerAnnounceUrl}})
 	seederTorrent, err := seeder.AddTorrent(&metaInfo)
-	utils.TestSeederInitial(t, *seederTorrent, err)
+	utils.TestSeederInitial(t, seederTorrent, err)
 
 	// Create a leecher
-	leecherConfig := LeecherConfig()
+	leecherConfig := LeecherConfig(0, 0)
 	utils.CreateDir(t, leecherConfig.DataDir)
 	leecher, _ := rbt.NewClient(leecherConfig)
 	defer leecher.Close()
@@ -92,6 +109,9 @@ func TestSeederLeecherTracker(t *testing.T) {
 	// Wait until transfer is complete
 	leecherTorrent.DownloadAll()
 	leecher.WaitAll()
+
+	// Verify baseline provider
+	utils.VerifyBaselineProvider(t, []*rbt.Torrent{seederTorrent, leecherTorrent}, nil)
 
 	// Verify file content equality
 	utils.VerifyFileContent(t, utils.TestFileName, seederConfig.DataDir, []string{leecherConfig.DataDir})

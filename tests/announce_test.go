@@ -54,7 +54,7 @@ func TestBasicAnnounce(t *testing.T) {
 
 func TestBaselineProviderAnnounce(t *testing.T) {
 	// Create a seeder
-	seederConfig := SeederConfig(0, 0)
+	seederConfig := SeederConfig(0, 3000)
 	utils.CreateDir(t, seederConfig.DataDir)
 	seeder, _ := rbt.NewClient(seederConfig)
 	defer seeder.Close()
@@ -79,7 +79,7 @@ func TestBaselineProviderAnnounce(t *testing.T) {
 	utils.TestSeederInitial(t, baselineProviderTorrent, err)
 
 	// Create a leecher
-	leecherConfig := LeecherConfig(0, 0)
+	leecherConfig := LeecherConfig(0, 4030)
 	utils.CreateDir(t, leecherConfig.DataDir)
 	leecher, _ := rbt.NewClient(leecherConfig)
 	defer leecher.Close()

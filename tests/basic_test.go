@@ -199,8 +199,6 @@ func TestOneSeederMultipleLeechers(t *testing.T) {
 	<-leecherTorrent2.GotInfo()
 	<-leecherTorrent3.GotInfo()
 
-
-
 	// Wait until transfer is complete
 	go func() {
 		leecherTorrent.DownloadAll()

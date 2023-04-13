@@ -33,6 +33,31 @@ func CreateFileAndMetaInfo(t *testing.T, dirs []string, name string, size int64,
 	return
 }
 
+// Create a file within each directory with specified size, return the metaInfo to be added to any client.
+func CreateFilesInDirs(t *testing.T, dirs []string, name string, size int64) {
+	// Create the files first - one for each dir
+	require.NotZero(t, len(dirs))
+	filePaths := make([]string, len(dirs))
+	for i, dir := range dirs {
+		filePaths[i] = filepath.Join(dir, name)
+	}
+	CreateFiles(t, filePaths, size)
+}
+
+// Create a file within each directory with specified size, return the metaInfo to be added to any client.
+func CreateMetaInfo(t *testing.T, dir string, name string, trackers [][]string) (metaInfo metainfo.MetaInfo) {
+	filePath := filepath.Join(dir, name)
+
+	metaInfo = metainfo.MetaInfo{AnnounceList: trackers}
+	metaInfo.SetDefaults()
+	info := metainfo.Info{PieceLength: PieceLength}
+	err := info.BuildFromFilePath(filePath)
+	require.NoError(t, err)
+	metaInfo.InfoBytes, err = bencode.Marshal(info)
+	require.NoError(t, err)
+	return
+}
+
 // Test the initial setup of a seeder torrent.
 func TestSeederInitial(t *testing.T, tr *rbt.Torrent, err error) {
 	require.NoError(t, err)

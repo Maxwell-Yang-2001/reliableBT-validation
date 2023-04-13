@@ -152,6 +152,8 @@ func TestMultipleSeedersOneLeecher(t *testing.T) {
 
 	utils.VerifyFileContent(t, utils.TestFileName, seederConfig1.DataDir, []string{leecherConfig1.DataDir})
 	utils.VerifyFileContent(t, utils.TestFileName, seederConfig2.DataDir, []string{leecherConfig1.DataDir})
+	utils.VerifyBaselineProvider(t, []*rbt.Torrent{seederTorrent1, seederTorrent2, leecherTorrent1}, []int{})
+	utils.VerifyBaselineProvider(t, []*rbt.Torrent{}, []int{4000})
 }
 
 
@@ -219,6 +221,8 @@ func TestOneSeederMultipleLeechers(t *testing.T) {
 	leecher2.WaitAll()
 	leecher3.WaitAll()
 
+	utils.VerifyBaselineProvider(t, []*rbt.Torrent{seederTorrent, leecherTorrent, leecherTorrent2, leecherTorrent3}, []int{})
+	utils.VerifyBaselineProvider(t, []*rbt.Torrent{}, []int{4000})
 	// Verify file content equality
 	utils.VerifyFileContent(t, utils.TestFileName, seederConfig.DataDir, []string{leecherConfig1.DataDir, leecherConfig2.DataDir, leecherConfig3.DataDir})
 }

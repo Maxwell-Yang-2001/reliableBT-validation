@@ -33,6 +33,7 @@ func TestBPKnowsLeecherButNoConnection(t *testing.T) {
 
 	// you want it to timeout 
 	leecherTorrent.DownloadAll()
+	// the leecher only knows the bp as a regular seeder since there is no communication with the tracker
 	timeout := time.After(10 * time.Second)
     done := make(chan bool)
     go func() {
@@ -43,6 +44,10 @@ func TestBPKnowsLeecherButNoConnection(t *testing.T) {
     select {
     case <-timeout:
 		t.Logf("Expected")
+		utils.VerifyBaselineProvider(t, []*rbt.Torrent{leecherTorrent, baselineTorrent}, []int{})
+	    utils.VerifyBaselineProvider(t, []*rbt.Torrent{}, []int{4000})
+		// Verify baseline provider (baseline provider should not get itself as baseline provider)
+
     case <-done:
 		t.Fatal("Download shouldn't have finished")
     }
@@ -70,21 +75,11 @@ func TestBPNotKnowingLeecher(t *testing.T) {
 	leecherTorrent.AddClientPeer(baselineProvider)
 	<-leecherTorrent.GotInfo()
 
-	// you want it to timeout 
 	leecherTorrent.DownloadAll()
-	timeout := time.After(10 * time.Second)
-    done := make(chan bool)
-    go func() {
-		leecher.WaitAll()
-        done <- true
-    }()
-
-    select {
-    case <-timeout:
-        t.Fatal("Test should have finished in time")
-    case <-done:
-		t.Logf("Expected")
-    }
+	leecher.WaitAll()
+	// the leecher only knows the bp as a regular seeder since there is no communication with the tracker
+	utils.VerifyBaselineProvider(t, []*rbt.Torrent{leecherTorrent, baselineTorrent}, []int{})
+	utils.VerifyBaselineProvider(t, []*rbt.Torrent{}, []int{4000})
 
 	utils.VerifyFileContent(t, utils.TestFileName, baselineProviderConfig.DataDir, []string{leecherConfig.DataDir})
 }

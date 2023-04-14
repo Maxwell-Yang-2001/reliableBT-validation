@@ -156,7 +156,6 @@ func TestMultipleSeedersOneLeecher(t *testing.T) {
 	utils.VerifyBaselineProvider(t, []*rbt.Torrent{}, []int{4000})
 }
 
-
 func TestOneSeederMultipleLeechers(t *testing.T) {
 	// Create a seeder 1
 	seederConfig := SeederConfig(0, 0)
@@ -164,7 +163,6 @@ func TestOneSeederMultipleLeechers(t *testing.T) {
 	seeder, _ := rbt.NewClient(seederConfig)
 	defer seeder.Close()
 	defer os.RemoveAll(seederConfig.DataDir)
-
 
 	// Create a test file within the seeder dir and add it to the seeder client
 	metaInfo := utils.CreateFileAndMetaInfo(t, []string{seederConfig.DataDir}, utils.TestFileName, 1e6, [][]string{{utils.TestTrackerAnnounceUrl}})
@@ -177,7 +175,6 @@ func TestOneSeederMultipleLeechers(t *testing.T) {
 	leecher, _ := rbt.NewClient(leecherConfig1)
 	defer leecher.Close()
 	defer os.RemoveAll(leecherConfig1.DataDir)
-
 
 	leecherConfig2 := LeecherConfig(1, 0)
 	utils.CreateDir(t, leecherConfig2.DataDir)
@@ -193,29 +190,26 @@ func TestOneSeederMultipleLeechers(t *testing.T) {
 
 	// Also attach the metaInfo to the leecher
 	leecherTorrent, _ := leecher.AddTorrent(&metaInfo)
-	leecherTorrent2, _  := leecher2.AddTorrent(&metaInfo)
-	leecherTorrent3, _  := leecher3.AddTorrent(&metaInfo)
+	leecherTorrent2, _ := leecher2.AddTorrent(&metaInfo)
+	leecherTorrent3, _ := leecher3.AddTorrent(&metaInfo)
 	<-leecherTorrent.GotInfo()
 	<-leecherTorrent2.GotInfo()
 	<-leecherTorrent3.GotInfo()
 
-
-
 	// Wait until transfer is complete
 	go func() {
 		leecherTorrent.DownloadAll()
-		
+
 	}()
-	
+
 	go func() {
 		leecherTorrent2.DownloadAll()
-		
+
 	}()
 
 	go func() {
 		leecherTorrent3.DownloadAll()
 	}()
-	
 
 	leecher.WaitAll()
 	leecher2.WaitAll()

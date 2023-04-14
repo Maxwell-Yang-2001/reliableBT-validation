@@ -8,11 +8,6 @@ import (
 	rbt "github.com/anacrolix/torrent"
 )
 
-// IMPORTANT:
-// 1. When testing this file, please configure the tracker with base: 1s and fuzz: 0s to reduce the announce interval
-// 2. Please run each test individually, with the tracker reset between every two tests - we want a clean tracker state before each test.
-// To do this, you can run `bash restart.sh` in the root of the tracker repo.
-
 // Test whether periodic announcement is made from each peer to the tracker.
 // This test requires Wireshark to be capturing on loopback and observe on the periodic requests. Each peer should have an announce per 1s.
 func TestBasicAnnounce(t *testing.T) {
@@ -52,6 +47,7 @@ func TestBasicAnnounce(t *testing.T) {
 	utils.VerifyFileContent(t, utils.TestFileName, seederConfig.DataDir, []string{leecherConfig.DataDir})
 }
 
+// Test whether baseline provider announces itself to the tracker, and is then promoted to other peers.
 func TestBaselineProviderAnnounce(t *testing.T) {
 	// Create a seeder
 	seederConfig := SeederConfig(0, 3000)
@@ -102,6 +98,7 @@ func TestBaselineProviderAnnounce(t *testing.T) {
 	utils.VerifyFileContent(t, utils.TestFileName, seederConfig.DataDir, []string{leecherConfig.DataDir})
 }
 
+// Test whether a fake baseline provider will be identified by the tracker and thus not promoted to other peers.
 func TestFakeBaselineProviderAnnounce(t *testing.T) {
 	// Create a seeder
 	seederConfig := SeederConfig(0, 0)

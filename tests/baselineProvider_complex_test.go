@@ -8,13 +8,15 @@ import (
 	"time"
 
 	rbt "github.com/anacrolix/torrent"
+	"github.com/stretchr/testify/require"
 )
 
-// start with a seeder and an empty leecher, runs for 3s,
-// kills the seeder, starts the bp (it has the complete file as well).
-func TestSeederWaitAndDiesHandOverToBaseLineProvider(t *testing.T) {
+// Starts with a seeder and an empty leecher, runs for 3s,
+// kills the seeder, starts the baseline provider (which starts with the complete file).
+// Expectation: the leecher should be able to finish the rest of the download with the baseline provider.
+func TestSeederWaitAndDieHandOverToBaselineProvider(t *testing.T) {
 	// Create a seeder
-	seederConfig := SeederConfig(0, 3000)
+	seederConfig := SeederConfig(0, 0)
 	utils.CreateDir(t, seederConfig.DataDir)
 	seederConfig.UploadRateLimiter = utils.SmallRateLimiter
 	seeder, _ := rbt.NewClient(seederConfig)
@@ -29,7 +31,6 @@ func TestSeederWaitAndDiesHandOverToBaseLineProvider(t *testing.T) {
 	utils.CreateFilesInDirs(t, []string{seederConfig.DataDir, baselineProviderConfig.DataDir}, utils.TestFileName, 1e7)
 	metaInfo := utils.CreateMetaInfo(t, seederConfig.DataDir, utils.TestFileName, [][]string{{utils.TestTrackerAnnounceUrl}})
 	trackerlessMetaInfo := utils.CreateMetaInfo(t, seederConfig.DataDir, utils.TestFileName, [][]string{})
-	// metaInfo := utils.CreateFileAndMetaInfo(t, []string{seederConfig.DataDir, baselineProviderConfig.DataDir}, utils.TestFileName, 2e9, [][]string{{utils.TestTrackerAnnounceUrl}})
 	seederTorrent, err := seeder.AddTorrent(&metaInfo)
 	seederTorrent.SmallIntervalAllowed = true
 	utils.TestSeederInitial(t, seederTorrent, err)
@@ -38,7 +39,7 @@ func TestSeederWaitAndDiesHandOverToBaseLineProvider(t *testing.T) {
 	defer os.RemoveAll(baselineProviderConfig.DataDir)
 
 	// Create a leecher
-	leecherConfig := LeecherConfig(0, 4030)
+	leecherConfig := LeecherConfig(0, 0)
 	utils.CreateDir(t, leecherConfig.DataDir)
 	leecher, _ := rbt.NewClient(leecherConfig)
 	defer leecher.Close()
@@ -51,27 +52,36 @@ func TestSeederWaitAndDiesHandOverToBaseLineProvider(t *testing.T) {
 
 	leecherTorrent.DownloadAll()
 
-	// sleep for 3 seconds and close seeder
+	// Sleep for 3 seconds and close seeder
 	time.Sleep(3 * time.Second)
-	fmt.Println("Uploaded Bytes ", seederTorrent.UploadedBytes())
-	fmt.Println("Downloaded Bytes: ", seederTorrent.DownloadedBytes())
+	seederUploadedBytes := seederTorrent.UploadedBytes()
+	fmt.Println("Seeder Uploaded Bytes: ", seederUploadedBytes)
+	fmt.Println("Leecher Downloaded Bytes: ", seederTorrent.DownloadedBytes())
 
 	seeder.Close()
 
-	// start bp
+	// Start baseline provider
 	baselineProviderTorrent, err := baselineProvider.AddTorrent(&trackerlessMetaInfo)
 	baselineProviderTorrent.SmallIntervalAllowed = true
 	utils.TestSeederInitial(t, baselineProviderTorrent, err)
 
+	// Let it process that it has the complete file,
+	// So it will promote itself to the tracker as a complete baseline provider right away
 	time.Sleep(3 * time.Second)
 	baselineProviderTorrent.AddTrackers([][]string{{utils.TestTrackerAnnounceUrl}})
 
 	// Wait until transfer is complete
 	leecher.WaitAll()
-	fmt.Println("Uploaded Bytes ", baselineProviderTorrent.UploadedBytes())
-	fmt.Println("Downloaded Bytes: ", baselineProviderTorrent.DownloadedBytes())
+	baselineProviderUploadedBytes := baselineProviderTorrent.UploadedBytes()
+	fmt.Println("Baseline Provider Uploaded Bytes: ", baselineProviderUploadedBytes)
+	fmt.Println("Baseline Provider Downloaded Bytes: ", baselineProviderTorrent.DownloadedBytes())
 
-	// Verify baseline provider (baseline provider should not get itself as baseline provider)
+	// Verify that baseline provider does contribute to the leecher
+	if seederUploadedBytes < 2e9 {
+		require.NotZero(t, baselineProviderUploadedBytes)
+	}
+
+	// Verify baseline provider (baseline provider should not get itself as baseline provider, but everyone else should)
 	utils.VerifyBaselineProvider(t, []*rbt.Torrent{leecherTorrent}, []int{baselineProviderPort})
 	utils.VerifyBaselineProvider(t, []*rbt.Torrent{baselineProviderTorrent}, []int{})
 
@@ -79,9 +89,12 @@ func TestSeederWaitAndDiesHandOverToBaseLineProvider(t *testing.T) {
 	utils.VerifyFileContent(t, utils.TestFileName, seederConfig.DataDir, []string{leecherConfig.DataDir})
 }
 
-func TestSeederWaitAndBaseLineProviderJoin(t *testing.T) {
+// Starts with a seeder and an empty leecher, runs for 3s,
+// starts the baseline provider (which starts with the complete file).
+// Expectation: the leecher should be able to finish the rest of the download with both the seeder and the baseline provider.
+func TestSeederWaitAndBaselineProviderJoin(t *testing.T) {
 	// Create a seeder
-	seederConfig := SeederConfig(0, 3000)
+	seederConfig := SeederConfig(0, 0)
 	utils.CreateDir(t, seederConfig.DataDir)
 	seeder, _ := rbt.NewClient(seederConfig)
 	defer os.RemoveAll(seederConfig.DataDir)
@@ -95,7 +108,6 @@ func TestSeederWaitAndBaseLineProviderJoin(t *testing.T) {
 	utils.CreateFilesInDirs(t, []string{seederConfig.DataDir, baselineProviderConfig.DataDir}, utils.TestFileName, 2e9)
 	metaInfo := utils.CreateMetaInfo(t, seederConfig.DataDir, utils.TestFileName, [][]string{{utils.TestTrackerAnnounceUrl}})
 	trackerlessMetaInfo := utils.CreateMetaInfo(t, seederConfig.DataDir, utils.TestFileName, [][]string{})
-	// metaInfo := utils.CreateFileAndMetaInfo(t, []string{seederConfig.DataDir, baselineProviderConfig.DataDir}, utils.TestFileName, 2e9, [][]string{{utils.TestTrackerAnnounceUrl}})
 	seederTorrent, err := seeder.AddTorrent(&metaInfo)
 	seederTorrent.SmallIntervalAllowed = true
 	utils.TestSeederInitial(t, seederTorrent, err)
@@ -104,7 +116,7 @@ func TestSeederWaitAndBaseLineProviderJoin(t *testing.T) {
 	defer os.RemoveAll(baselineProviderConfig.DataDir)
 
 	// Create a leecher
-	leecherConfig := LeecherConfig(0, 4030)
+	leecherConfig := LeecherConfig(0, 0)
 	utils.CreateDir(t, leecherConfig.DataDir)
 	leecher, _ := rbt.NewClient(leecherConfig)
 	defer leecher.Close()
@@ -117,25 +129,32 @@ func TestSeederWaitAndBaseLineProviderJoin(t *testing.T) {
 
 	leecherTorrent.DownloadAll()
 
-	// sleep for 3 seconds and close seeder
+	// Sleep for 3 seconds and close seeder
 	time.Sleep(3 * time.Second)
-	fmt.Println("Uploaded Bytes ", seederTorrent.UploadedBytes())
-	fmt.Println("Downloaded Bytes: ", seederTorrent.DownloadedBytes())
+	seederUploadedBytes := seederTorrent.UploadedBytes()
+	fmt.Println("Seeder Uploaded Bytes after 3 seconds: ", seederUploadedBytes)
+	fmt.Println("Seeder Downloaded Bytes after 3 seconds: ", seederTorrent.DownloadedBytes())
 
-	// seeder.Close()
-
-	// start bp
+	// Start baseline provider
 	baselineProviderTorrent, err := baselineProvider.AddTorrent(&trackerlessMetaInfo)
 	baselineProviderTorrent.SmallIntervalAllowed = true
 	utils.TestSeederInitial(t, baselineProviderTorrent, err)
 
+	// Let it process that it has the complete file,
+	// So it will promote itself to the tracker as a complete baseline provider right away
 	time.Sleep(3 * time.Second)
 	baselineProviderTorrent.AddTrackers([][]string{{utils.TestTrackerAnnounceUrl}})
 
 	// Wait until transfer is complete
 	leecher.WaitAll()
-	fmt.Println("Uploaded Bytes ", baselineProviderTorrent.UploadedBytes())
-	fmt.Println("Downloaded Bytes: ", baselineProviderTorrent.DownloadedBytes())
+	baselineProviderUploadedBytes := baselineProviderTorrent.UploadedBytes()
+	fmt.Println("Baseline Provider Uploaded Bytes: ", baselineProviderUploadedBytes)
+	fmt.Println("Baseline Provider Downloaded Bytes: ", baselineProviderTorrent.DownloadedBytes())
+
+	// Verify that baseline provider does contribute to the leecher
+	if seederUploadedBytes < 2e9 {
+		require.NotZero(t, baselineProviderUploadedBytes)
+	}
 
 	// Verify baseline provider (baseline provider should not get itself as baseline provider)
 	utils.VerifyBaselineProvider(t, []*rbt.Torrent{leecherTorrent}, []int{baselineProviderPort})

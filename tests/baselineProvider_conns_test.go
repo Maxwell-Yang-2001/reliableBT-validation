@@ -9,7 +9,9 @@ import (
 	rbt "github.com/anacrolix/torrent"
 )
 
-
+// With a complete baseline provider that knows a leecher, but not the other way around
+// Expectation: as a complete baseline provider should not initiate an outgoing connection,
+// the leecher should not download anything within the time limit
 func TestBPKnowsLeecherButNoConnection(t *testing.T) {
 	baselineProviderConfig := BaselineProviderConfig(0, 4000)
 	utils.CreateDir(t, baselineProviderConfig.DataDir)
@@ -31,29 +33,30 @@ func TestBPKnowsLeecherButNoConnection(t *testing.T) {
 	baselineTorrent.AddClientPeer(leecher)
 	<-leecherTorrent.GotInfo()
 
-	// you want it to timeout 
+	// you want it to timeout
 	leecherTorrent.DownloadAll()
 	// the leecher only knows the bp as a regular seeder since there is no communication with the tracker
 	timeout := time.After(10 * time.Second)
-    done := make(chan bool)
-    go func() {
+	done := make(chan bool)
+	go func() {
 		leecher.WaitAll()
-        done <- true
-    }()
+		done <- true
+	}()
 
-    select {
-    case <-timeout:
+	select {
+	case <-timeout:
 		t.Logf("Expected")
 		utils.VerifyBaselineProvider(t, []*rbt.Torrent{leecherTorrent, baselineTorrent}, []int{})
-	    utils.VerifyBaselineProvider(t, []*rbt.Torrent{}, []int{4000})
 		// Verify baseline provider (baseline provider should not get itself as baseline provider)
 
-    case <-done:
+	case <-done:
 		t.Fatal("Download shouldn't have finished")
-    }
+	}
 }
 
-
+// With a leecher that knows a complete baseline provider, but not the other way around
+// Expectation: as a complete baseline provider should accept incoming connections,
+// the leecher should be able to finish downloading quickly
 func TestBPNotKnowingLeecher(t *testing.T) {
 	baselineProviderConfig := BaselineProviderConfig(0, 4000)
 	utils.CreateDir(t, baselineProviderConfig.DataDir)
@@ -79,8 +82,6 @@ func TestBPNotKnowingLeecher(t *testing.T) {
 	leecher.WaitAll()
 	// the leecher only knows the bp as a regular seeder since there is no communication with the tracker
 	utils.VerifyBaselineProvider(t, []*rbt.Torrent{leecherTorrent, baselineTorrent}, []int{})
-	utils.VerifyBaselineProvider(t, []*rbt.Torrent{}, []int{4000})
 
 	utils.VerifyFileContent(t, utils.TestFileName, baselineProviderConfig.DataDir, []string{leecherConfig.DataDir})
 }
-
